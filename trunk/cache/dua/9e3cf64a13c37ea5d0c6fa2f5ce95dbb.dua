@@ -1,0 +1,10 @@
+ENT.Type = "anim"
+ENT.Base = "base_wire_entity"
+ENT.PrintName = "Wire Map Doorcontroller"
+ENT.Author = "Mr.Faul"
+ENT.Contact = "mr.faul@gmx.de"
+ENT.Purpose = "Communicate between wire and map Doors."
+ENT.Instructions = "Use wire and hammer (FGD recommend)."
+ENT.Category = "Wire Map Ents"
+ENT.Spawnable = false
+ENT.AdminSpawnable = false

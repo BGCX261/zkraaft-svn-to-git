@@ -1,0 +1,182 @@
+-- Homing Missile
+
+local BULLET = {}
+
+-- General Information
+BULLET.Name = "Homing Missile - Surface to air"
+BULLET.Author = "Divran"
+BULLET.Description = "Extremely fast and accurate missile. Its limitation is that it only homes for a short period of time (0.4 seconds)."
+BULLET.AdminOnly = false
+BULLET.SuperAdminOnly = false
+
+-- Appearance
+BULLET.Model = "models/aamissile.mdl"
+BULLET.Material = "phoenix_storms/gear"
+BULLET.Color = nil
+BULLET.Trail = nil
+
+-- Effects / Sounds
+BULLET.FireSound = {"arty/rocket.wav"}
+BULLET.ExplosionSound = {"weapons/explode3.wav","weapons/explode4.wav","weapons/explode5.wav"}
+BULLET.FireEffect = nil
+BULLET.ExplosionEffect = "v2splode"
+
+-- Movement
+BULLET.Speed = 175
+BULLET.Gravity = nil
+BULLET.RecoilForce = 60
+BULLET.Spread = nil
+
+-- Damage
+BULLET.DamageType = "BlastDamage"
+BULLET.Damage = 800
+BULLET.Radius = 500
+BULLET.RangeDamageMul = 0.9
+BULLET.NumberOfSlices = nil
+BULLET.SliceDistance = nil
+BULLET.PlayerDamage = 350
+BULLET.PlayerDamageRadius = 400
+
+-- Reloading/Ammo
+BULLET.Reloadtime = 6
+BULLET.Ammo = 0
+BULLET.AmmoReloadtime = 0
+
+BULLET.Lifetime = {0.4,6}
+BULLET.ExplodeAfterDeath = true
+BULLET.EnergyPerShot = 7000
+
+BULLET.CustomInputs = { "Fire", "X", "Y", "Z", "XYZ [VECTOR]" }
+
+
+-- Custom Functions 
+-- (If you set the override var to true, the cannon/bullet will run these instead. Use these functions to do stuff which is not possible with the above variables)
+
+-- Wire Input (This is called whenever a wire input is changed)
+BULLET.WireInputOverride = true
+function BULLET:WireInput( self, inputname, value )
+	if (inputname == "Fire") then
+		if (value != 0) then
+			self.Firing = true
+		else
+			self.Firing = false
+		end
+		if (value != 0 and self.CanFire == true) then
+			self.LastFired = CurTime()
+			self.CanFire = false
+			WireLib.TriggerOutput(self.Entity, "Can Fire", 0)
+			self:FireBullet()
+		end
+	elseif (inputname == "X") then
+		if (!self.TargetPos) then self.TargetPos = Vector(0,0,0) end
+		self.TargetPos.x = value
+	elseif (inputname == "Y") then
+		if (!self.TargetPos) then self.TargetPos = Vector(0,0,0) end
+		self.TargetPos.y = value
+	elseif (inputname == "Z") then
+		if (!self.TargetPos) then self.TargetPos = Vector(0,0,0) end
+		self.TargetPos.z = value
+	elseif (inputname == "XYZ") then
+		self.TargetPos = value
+	end		
+end
+
+-- Initialize (Is called when the bullet initializes)
+BULLET.InitializeOverride = true
+function BULLET:InitializeFunc( self )   
+	self.Entity:PhysicsInit( SOLID_VPHYSICS ) 	
+	self.Entity:SetMoveType( MOVETYPE_NONE )
+	self.Entity:SetSolid( SOLID_NONE )     
+	self.FlightDirection = self.Entity:GetUp()
+	self.TargetDir = self.Entity:GetUp()
+	if (self.Cannon:IsValid()) then
+		if (self.Cannon.TargetPos and self.Cannon.TargetPos != Vector(0,0,0)) then
+			self.TargetDir = (self.Cannon.TargetPos-self:GetPos()):GetNormalized()
+		end
+	end
+	self.Exploded = false
+	self.TraceDelay = CurTime() + self.Bullet.Speed / 1000 / 4
+	
+	-- Lifetime
+	self.Lifetime = CurTime() + self.Bullet.Lifetime[2]
+	self.Thrust = CurTime() + self.Bullet.Lifetime[1]
+	
+	-- Trail
+	if (self.Bullet.Trail) then
+		local trail = self.Bullet.Trail
+		util.SpriteTrail( self.Entity, 0, trail.Color, false, trail.StartSize, trail.EndSize, trail.Length, 1/(trail.StartSize+trail.EndSize)*0.5, trail.Texture )
+	end
+	
+	-- Material
+	if (self.Bullet.Material) then
+		self.Entity:SetMaterial( self.Bullet.Material )
+	end
+	
+	-- Color
+	if (self.Bullet.Color) then
+		local C = self.Bullet.Color
+		self.Entity:SetColor( C.r, C.g, C.b, 255 )
+	end
+	
+	local trail = ents.Create("env_fire_trail")
+	trail:SetPos( self.Entity:GetPos() - self.Entity:GetUp() * 20 )
+	trail:Spawn()
+	trail:SetParent( self.Entity )
+end
+
+-- Think
+BULLET.ThinkOverride = true
+function BULLET:ThinkFunc( self )
+	-- Make it fly
+	self.Entity:SetPos( self.Entity:GetPos() + self.FlightDirection * self.Bullet.Speed )
+	if (self.TargetPos != Vector(0,0,0) and CurTime() < self.Thrust) then
+		self.FlightDirection = self.FlightDirection + (self.TargetDir-self.FlightDirection) / 5
+		self.FlightDirection = self.FlightDirection:GetNormalized()
+	end
+	if (self.Cannon:IsValid()) then
+		if (self.Cannon.TargetPos and self.Cannon.TargetPos != Vector(0,0,0)) then
+			self.TargetDir = (self.Cannon.TargetPos-self:GetPos()):GetNormalized()
+		end
+	end
+	self.Entity:SetAngles( self.FlightDirection:Angle() + Angle(90,0,0) )
+	
+	-- Lifetime
+	if (self.Lifetime) then
+		if (CurTime() > self.Lifetime) then
+			if (self.Bullet.ExplodeAfterDeath) then
+				local tr = {}
+				tr.start = self.Entity:GetPos()-self.FlightDirection
+				tr.endpos = self.Entity:GetPos()
+				tr.filter = self.Entity
+				local trace = util.TraceLine( tr )
+				self:Explode( trace )
+			else
+				self.Entity:Remove()
+			end
+		end
+	end
+	
+	if (CurTime() > self.TraceDelay) then
+		-- Check if it hit something
+		local tr = {}
+		tr.start = self.Entity:GetPos() - self.FlightDirection * self.Bullet.Speed
+		tr.endpos = self.Entity:GetPos()
+		tr.filter = self.Entity
+		local trace = util.TraceLine( tr )
+		
+		if (trace.Hit and !self.Exploded) then	
+			self.Exploded = true
+			self:Explode( trace )
+		else			
+			-- Run more often!
+			self.Entity:NextThink( CurTime() )
+			return true
+		end
+	else			
+		-- Run more often!
+		self.Entity:NextThink( CurTime() )
+		return true
+	end
+end
+
+pewpew:AddBullet( BULLET )

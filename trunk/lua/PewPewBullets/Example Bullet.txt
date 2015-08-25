@@ -1,0 +1,152 @@
+-- Basic Cannon
+
+local BULLET = {}
+
+-- General Information
+BULLET.Name = "Example"
+BULLET.Author = "Divran"
+BULLET.Description = "Aim away from face."
+BULLET.AdminOnly = false
+BULLET.SuperAdminOnly = false
+
+-- Appearance
+BULLET.Model = "put your model here"
+BULLET.Material = nil -- if you want to change the material of the bullet, put the material here instead of "nil" Example: "phoenix_storms/gear"
+BULLET.Color = nil -- if you want to change the color of the bullet, put the color here instead of "nil" Example: Color(255,0,0)
+BULLET.Trail = nil -- if you want to set a trail on your turret, put a table with the necessary contents. Example: { StartSize = 40, EndSize = 0, Length = 4, Texture = "trails/laser.vmt", Color = Color( 255, 0, 0) }
+
+-- Effects / Sounds
+BULLET.FireSound = {"sound1", "sound2","sound3","and so on"} -- use as many sounds as you want
+BULLET.ExplosionSound = {"sound1", "sound2","sound3","and so on"}  -- use as many sounds as you want
+BULLET.FireEffect = "cannon_flare" -- find an effect in the effects folder
+BULLET.ExplosionEffect = "big_splosion" -- find an effect in the effects folder
+BULLET.EmptyMagSound = {"sound1","sound2","sound3","and so on"} -- use as many sounds as you want
+
+-- Movement
+BULLET.Speed = 50
+BULLET.Gravity = 0.2
+BULLET.RecoilForce = 500
+BULLET.Spread = 0
+
+-- Damage
+BULLET.DamageType = "BlastDamage" -- Look in pewpew_damagecontrol.lua for available damage types
+BULLET.Damage = 250
+BULLET.Radius = 800
+BULLET.RangeDamageMul = 0.3 -- This is only used with "BlastDamage". It determines how much less damage it deals depending on the distance from the center of the blast.
+BULLET.NumberOfSlices = nil -- this is only used with "SliceDamage". It determines how many props in a line you want to deal damage to.
+BULLET.SliceDistance = nil -- This is only used with "SliceDamage". It determines the total maximum range the trace will travel.
+BULLET.Duration = nil -- This is only used with "EMPDamage". It determines how long the target entities will be disabled.
+BULLET.PlayerDamage = 150 -- Damage vs players. This is only used in "BlastDamage".
+BULLET.PlayerDamageRadius = 300
+
+-- Reloading/Ammo
+BULLET.Reloadtime = 3.5
+BULLET.Ammo = 0 -- If you set this to 0, it will have infinite ammo
+BULLET.AmmoReloadtime = 0
+
+-- Other
+BULLET.Lifetime = {0,0} -- These two numbers determine the random interval of the bullets lifetime. (Meaning, it runs: "self.Lifetime = math.Rand(self.Bullet.Lifetime[1],self.Bullet.Lifetime[2])")
+BULLET.ExplodeAfterDeath = false -- This determines wether or not the bullet should explode after the lifetime runs out. False: disappears. True: explodes.
+BULLET.EnergyPerShot = 4000 -- This is the amount of energy the bullet will use per shot. It only uses this if the server has Spacebuild 3 (& co.) installed and if pewpew.EnergyUsage is enabled.
+
+BULLET.CustomInputs = nil -- Use a table here to replace the default wire inputs (Only for adv users).
+BULLET.CustomOutputs = nil -- Use a table here to replace the default wire outputs (Only for adv users).
+
+-- Custom Functions (Only for adv users)
+-- (If you set the override var to true, the cannon/bullet will run these instead. Use these functions to do stuff which is not possible with the above variables)
+-- I suggest you erase any functions you are not using to minimize file size.
+
+-- Wire Input (This is called whenever a wire input is changed. Also called whenever a numpad is pressed. "inputname" and "value" will automatically change to "Fire" or "Reload" and 1/0 when a numpad is pressed) (Is run on: Cannon)
+BULLET.WireInputOverride = false
+function BULLET:WireInput( self, inputname, value )
+	-- Nothing
+end
+
+-- Fire (Is called before the cannon is about to fire) (Is run on: Cannon)
+BULLET.FireOverride = false
+function BULLET:Fire( self )
+	-- Nothing
+end
+
+-- Initialize (Is called when the bullet initializes) (Is run on: Bullet)
+BULLET.InitializeOverride = false
+function BULLET:InitializeFunc( self )   
+	-- Nothing
+end
+
+-- Cannon Think (Is run on: Cannon)
+BULLET.CannonThinkOverride = false
+function BULLET:CannonThink( self )
+	-- Nothing
+end
+
+-- Think (Is run on: Bullet)
+BULLET.ThinkOverride = false
+function BULLET:ThinkFunc( self )
+	-- Nothing
+end
+
+-- Explode (Is called when the bullet explodes) Note: this will not run if you override the think function (unless you call it from there as well) (Is run on: Bullet)
+BULLET.ExplodeOverride = false
+function BULLET:Explode( self, trace )
+	-- Nothing
+end
+
+-- This is called when the cannon collides (Is run on: Cannon)
+BULLET.CannonPhysicsCollideOverride = false
+function BULLET:CannonPhysicsCollideFunc(Data, PhysObj)
+	-- Nothing
+end
+
+-- This is called when the cannon touches another entity (Is run on: Cannon)
+BULLET.CannonTouchOverride = false
+function BULLET:CannonTouchFunc(Ent)	
+
+end
+
+-- This is called when the bullet collides (Advanced users only. It only works if you first override initialize and change it to vphysics) (Is run on: Bullet)
+BULLET.PhysicsCollideOverride = false
+function BULLET:PhysicsCollideFunc(CollisionData, PhysObj)
+	-- Nothing
+end
+
+-- Client side overrides:
+
+-- Initialize (Is run on: Bullet)
+BULLET.CLInitializeOverride = false
+function BULLET:CLInitializeFunc()
+	-- Nothing
+end
+
+-- Cannon Initialize (Is run on: Cannon)
+BULLET.CLCannonInitializeOverride = false
+function BULLET:CLCannonInitializeFunc()
+	-- Nothing
+end
+
+-- Think (Is run on: Bullet)
+BULLET.CLThinkOverride = false
+function BULLET:CLThinkFunc()
+	-- Nothing
+end
+
+-- Cannon Think (Is run on: Cannon)
+BULLET.CLCannonThinkOverride = false
+function BULLET:CLCannonThinkFunc()
+	-- Nothing
+end
+
+
+-- Draw (Is run on: Bullet)
+BULLET.CLDrawOverride = false
+function BULLET:CLDrawFunc()
+	-- Nothing
+end
+
+-- Cannon Draw (Is run on: Cannon)
+BULLET.CLCannonDrawOverride = false
+function BULLET:CLCannonDrawFunc()
+	-- Nothing
+end
+
+pewpew:AddBullet( BULLET )
